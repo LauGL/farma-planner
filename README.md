@@ -1,12 +1,38 @@
-# React + Vite
+# 🌿 FarmaPlanner
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+📅 **FarmaPlanner** es una aplicación web para gestionar turnos y vacaciones dentro de una empresa.  
+Cada trabajador podrá ver su turno asignado (mañana/tarde), registrar vacaciones en un calendario compartido y visualizar las de sus compañeros.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Tecnologías
 
-## Expanding the ESLint configuration
+- [React](https://react.dev/) + [Vite](https://vitejs.dev/)
+- [Firebase Authentication](https://firebase.google.com/products/auth) (login con usuario y contraseña)
+- [Firebase Firestore](https://firebase.google.com/products/firestore) (almacenamiento de datos en tiempo real)
+- [FullCalendar](https://fullcalendar.io/) (visualización de turnos y vacaciones)
+- [TailwindCSS](https://tailwindcss.com/) (estilos modernos y responsive)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 📌 Funcionalidades previstas (MVP)
+
+- 🔑 Autenticación de usuarios (email y contraseña).
+- 🎨 Asignación de un **color único** a cada trabajador.
+- 🕒 Vista de turnos (mañana/tarde) en un dashboard.
+- 🌴 Registro de vacaciones en calendario compartido.
+- 🤝 Posibilidad de cubrir turnos de compañeros en vacaciones.
+
+---
+
+## ⚙️ Instalación
+
+Clona el repositorio e instala las dependencias:
+
+```bash
+git clone https://github.com/LauGL/farma-planner.git
+cd farma-planner
+npm install
+npm run dev
+
+```
