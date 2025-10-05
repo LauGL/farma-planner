@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loginUser } from "../services/auth";
+import { toast } from "react-hot-toast";
 
 function Login() {
   const navigate = useNavigate();
@@ -21,9 +22,9 @@ function Login() {
 
       setTimeout(() => navigate("/dashboard"), 1000);
     } catch (error) {
-      console.error(error); // ahora sí se está usando
-      setMessage("Correo o contraseña incorrectos ❌");
-      setMessageType("error");
+      console.error(error);
+      toast.error("Correo o contraseña incorrectos ❌");
+      return;
     }
   };
 

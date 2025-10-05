@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { registerUser } from "../services/auth";
+import { toast } from "react-hot-toast";
 
 const Requirement = ({ label, isValid }) => (
   <li
@@ -36,14 +37,13 @@ function Register() {
     e.preventDefault();
 
     if (!isPasswordSecure) {
-      setMessage("La contraseña no cumple los requisitos de seguridad.");
+      toast.error("La contraseña no cumple los requisitos de seguridad.");
       setMessageType("error");
       return;
     }
 
     if (password !== confirmPassword) {
-      setMessage("Las contraseñas no coinciden ❌");
-      setMessageType("error");
+      toast.error("Las contraseñas no coinciden ❌");
       return;
     }
 
@@ -60,8 +60,8 @@ function Register() {
       setColor("#2E7D32");
       setShift("morning");
     } catch (error) {
-      setMessage(error.message || "Error al registrar usuario ❌");
-      setMessageType("error");
+      toast.error(error.message || "Error al registrar usuario ❌");
+      return;
     }
   };
 

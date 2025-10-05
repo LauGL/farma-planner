@@ -1,8 +1,8 @@
-// src/pages/Dashboard.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "../firebaseConfig";
-import CalendarComponent from "../components/Calendar";
+import FullCalendarComponent from "../components/FullCalendarComponent";
+import { toast } from "react-hot-toast";
 import {
   collection,
   getDocs,
@@ -22,7 +22,7 @@ function Dashboard() {
   const [userColor, setUserColor] = useState("#2196f3");
   const [userName, setUserName] = useState("");
 
-  // Autenticación
+  // Autenticación y carga de datos del usuario
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
       if (!currentUser) {
@@ -31,7 +31,6 @@ function Dashboard() {
       }
       setUser(currentUser);
 
-      // Obtener datos del usuario (nombre y color)
       const userRef = doc(db, "users", currentUser.uid);
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
@@ -43,20 +42,21 @@ function Dashboard() {
     return () => unsubscribe();
   }, [navigate]);
 
-  // Cargar vacaciones guardadas en Firestore
+  // Cargar vacaciones desde Firestore
   useEffect(() => {
     const fetchVacations = async () => {
       const querySnapshot = await getDocs(collection(db, "vacations"));
       const fetchedEvents = querySnapshot.docs.map((doc) => {
         const vac = doc.data();
         return {
+          id: doc.id,
           title: `${vac.name} (Vacaciones${
             vac.status === "pendiente" ? " - Pendiente" : ""
           })`,
           start: new Date(vac.start.seconds * 1000),
           end: new Date(vac.end.seconds * 1000 + 86400000),
-          allDay: true,
           color: vac.color,
+          uid: vac.uid,
           status: vac.status,
         };
       });
@@ -67,14 +67,14 @@ function Dashboard() {
 
   // Añadir tramo local
   const addTramo = () => {
-    if (!start || !end) return alert("Selecciona fechas válidas");
+    if (!start || !end) return toast.error("Selecciona fechas válidas");
 
     const startDate = new Date(start);
     const endDate = new Date(end);
     const days = (endDate - startDate) / (1000 * 60 * 60 * 24) + 1;
 
     const total = vacationTramos.reduce((acc, t) => acc + t.days, 0);
-    if (total + days > 30) return alert("No puedes exceder los 30 días");
+    if (total + days > 30) return toast.error("No puedes exceder los 30 días");
 
     const newTramo = {
       start: startDate,
@@ -94,7 +94,7 @@ function Dashboard() {
     setVacationTramos(updated);
   };
 
-  // Guardar tramos en Firestore con status pendiente
+  // Guardar tramos en Firestore
   const saveVacations = async () => {
     if (vacationTramos.length === 0) return;
     for (const tramo of vacationTramos) {
@@ -107,7 +107,7 @@ function Dashboard() {
         status: "pendiente",
       });
     }
-    alert("Vacaciones enviadas para revisión ✅");
+    toast.success("Vacaciones enviadas para revisión ✅");
     setVacationTramos([]);
     window.location.reload();
   };
@@ -115,6 +115,14 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-secondary px-4 py-8 flex flex-col items-center">
       <h1 className="text-4xl font-bold text-primary mb-2">FarmaPlanner</h1>
+
+      <button
+        onClick={() => navigate("/profile")}
+        className="self-end mb-4 bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark transition"
+      >
+        Mi perfil
+      </button>
+
       <p className="text-lg text-gray-700 mb-6">
         Panel de gestión de turnos y vacaciones
       </p>
@@ -156,7 +164,7 @@ function Dashboard() {
                 >
                   <span>
                     {tramo.start.toLocaleDateString()} →{" "}
-                    {tramo.end.toLocaleDateString()}({tramo.days} días)
+                    {tramo.end.toLocaleDateString()} ({tramo.days} días)
                   </span>
                   <button
                     onClick={() => deleteTramo(i)}
@@ -179,15 +187,17 @@ function Dashboard() {
       </div>
 
       <div className="w-full max-w-5xl">
-        <CalendarComponent
+        <FullCalendarComponent
+          userId={user?.uid}
+          editable={true}
           events={[
             ...events,
             ...vacationTramos.map((tramo) => ({
               title: `${userName} (sin guardar)`,
               start: tramo.start,
               end: tramo.end,
-              allDay: true,
               color: userColor,
+              allDay: true,
             })),
           ]}
         />
