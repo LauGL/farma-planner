@@ -1,122 +1,111 @@
-// src/pages/Profile.jsx
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { auth, db } from "../firebaseConfig";
-import {
-  doc,
-  getDoc,
-  updateDoc,
-  query,
-  collection,
-  where,
-  getDocs,
-} from "firebase/firestore";
-import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { toast } from "react-hot-toast";
 
 function Profile() {
   const [userData, setUserData] = useState(null);
   const [color, setColor] = useState("");
-  const [shift, setShift] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [turno, setTurno] = useState("mañana");
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      const user = auth.currentUser;
-      if (!user) {
-        navigate("/login");
-        return;
-      }
-
-      const docRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setUserData(data);
-        setColor(data.color);
-        setShift(data.shift);
-      }
-      setLoading(false);
-    };
-
-    fetchUserData();
-  }, [navigate]); // ✅ Agregamos 'navigate' como dependencia
-
-  const isColorInUse = async (newColor) => {
-    const q = query(collection(db, "users"), where("color", "==", newColor));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.some((doc) => doc.id !== auth.currentUser.uid);
-  };
-
-  const handleUpdate = async () => {
-    if (!color || !shift) {
-      toast.error("Todos los campos son obligatorios");
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      navigate("/login");
       return;
     }
 
-    if (color !== userData.color) {
-      const colorExists = await isColorInUse(color);
-      if (colorExists) {
-        toast.error("Este color ya está en uso. Elige otro");
-        return;
+    const fetchData = async () => {
+      const docRef = doc(db, "users", currentUser.uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        setUserData(data);
+        setColor(data.color || "");
+        setTurno(data.turno || "mañana");
       }
-    }
+    };
 
+    fetchData();
+  }, [navigate]);
+
+  const handleSave = async () => {
     try {
-      await updateDoc(doc(db, "users", auth.currentUser.uid), {
+      const uid = auth.currentUser.uid;
+      await updateDoc(doc(db, "users", uid), {
         color,
-        shift,
+        turno,
       });
       toast.success("Perfil actualizado ✅");
-    } catch {
-      toast.error("Error al actualizar el perfil ❌");
+    } catch (error) {
+      toast.error("Error al guardar cambios ❌");
+      console.error(error);
     }
   };
 
-  if (loading) return <p className="text-center mt-10">Cargando perfil...</p>;
+  const handleLogout = async () => {
+    await auth.signOut();
+    navigate("/login");
+  };
 
   return (
-    <div className="min-h-screen bg-secondary flex flex-col items-center px-4 py-8">
-      <h1 className="text-3xl font-bold text-primary mb-4">Mi Perfil</h1>
+    <div className="min-h-screen bg-secondary px-4 py-8 flex flex-col items-center">
+      <h1 className="text-3xl font-bold mb-6 text-primary">Mi Perfil</h1>
 
-      <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
-        <p>
-          <strong>Nombre:</strong> {userData.name}
-        </p>
-        <p>
-          <strong>Email:</strong> {userData.email}
-        </p>
+      <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
+        {userData && (
+          <>
+            <p className="mb-4">
+              <strong>Nombre:</strong> {userData.name}
+            </p>
+            <p className="mb-4">
+              <strong>Email:</strong> {userData.email}
+            </p>
 
-        <div className="mt-4">
-          <label className="block mb-1 font-semibold">Turno actual:</label>
-          <select
-            value={shift}
-            onChange={(e) => setShift(e.target.value)}
-            className="w-full border p-2 rounded"
-          >
-            <option value="morning">Mañana</option>
-            <option value="afternoon">Tarde</option>
-          </select>
-        </div>
+            <label className="block mb-2">Color identificativo:</label>
+            <input
+              type="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="mb-4 w-full h-10 rounded border"
+            />
 
-        <div className="mt-4">
-          <label className="block mb-1 font-semibold">
-            Color identificativo:
-          </label>
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-          />
-        </div>
+            <label className="block mb-2">Turno actual:</label>
+            <select
+              value={turno}
+              onChange={(e) => setTurno(e.target.value)}
+              className="mb-6 w-full p-2 border rounded"
+            >
+              <option value="mañana">Mañana</option>
+              <option value="tarde">Tarde</option>
+            </select>
 
-        <button
-          onClick={handleUpdate}
-          className="mt-6 w-full bg-primary text-white py-2 px-4 rounded hover:bg-primary-dark transition"
-        >
-          Guardar cambios
-        </button>
+            <button
+              onClick={handleSave}
+              className="w-full bg-primary text-white py-2 rounded hover:bg-blue-700 mb-4"
+            >
+              Guardar cambios
+            </button>
+
+            {/* ✅ Botón para volver atrás */}
+            <button
+              onClick={() => navigate(-1)}
+              className="w-full bg-gray-300 text-black py-2 rounded hover:bg-gray-400 mb-4"
+            >
+              ← Atrás
+            </button>
+
+            {/* ✅ Botón cerrar sesión */}
+            <button
+              onClick={handleLogout}
+              className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700"
+            >
+              Cerrar sesión
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

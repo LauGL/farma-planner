@@ -21,8 +21,8 @@ function Dashboard() {
   const [events, setEvents] = useState([]);
   const [userColor, setUserColor] = useState("#2196f3");
   const [userName, setUserName] = useState("");
+  const [userRole, setUserRole] = useState("user");
 
-  // Autenticación y carga de datos del usuario
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
       if (!currentUser) {
@@ -37,12 +37,12 @@ function Dashboard() {
         const data = userSnap.data();
         setUserColor(data.color);
         setUserName(data.name);
+        setUserRole(data.role || "user");
       }
     });
     return () => unsubscribe();
   }, [navigate]);
 
-  // Cargar vacaciones desde Firestore
   useEffect(() => {
     const fetchVacations = async () => {
       const querySnapshot = await getDocs(collection(db, "vacations"));
@@ -57,15 +57,15 @@ function Dashboard() {
           end: new Date(vac.end.seconds * 1000 + 86400000),
           color: vac.color,
           uid: vac.uid,
-          status: vac.status,
         };
       });
+
       setEvents(fetchedEvents);
     };
+
     fetchVacations();
   }, []);
 
-  // Añadir tramo local
   const addTramo = () => {
     if (!start || !end) return toast.error("Selecciona fechas válidas");
 
@@ -87,14 +87,12 @@ function Dashboard() {
     setEnd("");
   };
 
-  // Eliminar tramo local
   const deleteTramo = (index) => {
     const updated = [...vacationTramos];
     updated.splice(index, 1);
     setVacationTramos(updated);
   };
 
-  // Guardar tramos en Firestore
   const saveVacations = async () => {
     if (vacationTramos.length === 0) return;
     for (const tramo of vacationTramos) {
@@ -116,12 +114,23 @@ function Dashboard() {
     <div className="min-h-screen bg-secondary px-4 py-8 flex flex-col items-center">
       <h1 className="text-4xl font-bold text-primary mb-2">FarmaPlanner</h1>
 
-      <button
-        onClick={() => navigate("/profile")}
-        className="self-end mb-4 bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark transition"
-      >
-        Mi perfil
-      </button>
+      <div className="flex justify-between w-full max-w-5xl mb-4">
+        <button
+          onClick={() => navigate("/profile")}
+          className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark transition mx-auto block mb-4"
+        >
+          Mi perfil
+        </button>
+
+        {userRole === "admin" && (
+          <button
+            onClick={() => navigate("/admin")}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+          >
+            Panel de administrador
+          </button>
+        )}
+      </div>
 
       <p className="text-lg text-gray-700 mb-6">
         Panel de gestión de turnos y vacaciones
@@ -188,18 +197,19 @@ function Dashboard() {
 
       <div className="w-full max-w-5xl">
         <FullCalendarComponent
-          userId={user?.uid}
-          editable={true}
           events={[
+            // solo mostramos los tramos no guardados del usuario actual
             ...events,
             ...vacationTramos.map((tramo) => ({
               title: `${userName} (sin guardar)`,
               start: tramo.start,
               end: tramo.end,
               color: userColor,
-              allDay: true,
+              uid: user?.uid,
             })),
           ]}
+          userId={user?.uid}
+          editable
         />
       </div>
     </div>
